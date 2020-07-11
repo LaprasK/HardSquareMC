@@ -15,7 +15,7 @@ int main(int argc, char** argv){
     const unsigned int numParticles = (argc > 1) ? stoi(argv[1]) : 100;
     const unsigned int activeParticles = numParticles;
     const double density = (argc > 2)? stod(argv[2]) : 0.25;
-    const unsigned int stepSave = 1;
+    const unsigned int stepSave = (argc > 4) ? stod(argv[4]) : 1;
     const double maxDisp = 0.1;
     const double sq2 = sqrt(0.5);
     const double PI2 = M_PI * 2;

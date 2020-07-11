@@ -32,9 +32,9 @@ int main(int argc, char** argv){
     unsigned int activeCount = 0;
     Rand myGenerator;
 
-    ofstream output("./Result.txt");
-    output << numParticles <<";" << boxSize[0] << ";" << boxSize[1] << '\n';
-    output.close();
+    ofstream file("./Result.txt");
+    file << numParticles <<";" << boxSize[0] << ";" << boxSize[1] << '\n';
+    //output.close();
     /***********************************************************/
     /*                  Initialize System                      */
     /***********************************************************/
@@ -93,8 +93,8 @@ int main(int argc, char** argv){
         idxs.push_back(i);
     }
     //write position and file to file;
-    fstream file;
-    file.open("./Result.txt", fstream::app);
+    //fstream file;
+    //file.open("./Result.txt", fstream::app);
     for(int i = 0; i < positions.size(); ++i){
         file << positions[i][0] << ";" << positions[i][1] << ";" << orientations[i] << "\n";
     }

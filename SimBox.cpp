@@ -15,7 +15,7 @@ int main(int argc, char** argv){
     const unsigned int numParticles = (argc > 1) ? stoi(argv[1]) : 100;
     const unsigned int activeParticles = numParticles;
     const double density = (argc > 2)? stod(argv[2]) : 0.25;
-    const unsigned int stepSave = 1;
+    const unsigned int stepSave = (argc > 4)? stoi(argv[4]) : 1;
     const double maxDisp = 0.1;
     const double sq2 = sqrt(0.5);
     const double PI2 = M_PI * 2;
@@ -24,6 +24,7 @@ int main(int argc, char** argv){
     double DR = 0.238;
     double DT = 0.1;
     double v0 = 0.063;
+    double scaleSize = 0.99;
     double sidelength = sqrt(numParticles / density);
     vector<double> boxSize({sidelength, sidelength});
     vec2<double> box(sidelength, sidelength);
@@ -32,9 +33,9 @@ int main(int argc, char** argv){
     unsigned int activeCount = 0;
     Rand myGenerator;
 
-    ofstream output("./Result.txt");
-    output << numParticles <<";" << boxSize[0] << ";" << boxSize[1] << '\n';
-    output.close();
+    ofstream file("./Result.txt");
+    file << numParticles <<";" << boxSize[0] << ";" << boxSize[1] << '\n';
+    //output.close();
     /***********************************************************/
     /*                  Initialize System                      */
     /***********************************************************/
@@ -100,8 +101,8 @@ int main(int argc, char** argv){
         idxs.push_back(i);
     }
     //write position and file to file;
-    fstream file;
-    file.open("./Result.txt", fstream::app);
+    //fstream file;
+    //file.open("./Result.txt", fstream::app);
     for(int i = 0; i < positions.size(); ++i){
         file << positions[i][0] << ";" << positions[i][1] << ";" << orientations[i] << "\n";
     }
@@ -152,6 +153,7 @@ int main(int argc, char** argv){
                 squareList[idx] = tempSquare;
                 orientations[idx] = curr_orient + rotation_disp;
                 simTree.updateParticle(idx, lowerBound, upperBound);
+                failedMoves[idx] = 0; 
             }
             else{
                 disp_x = disp_0 * sq2 * cos(curr_orient - M_PI_4) - disp_t * sq2 * sin(curr_orient + M_PI_4);
@@ -179,6 +181,7 @@ int main(int argc, char** argv){
                     squareList[idx] = tempSquare;
                     orientations[idx] = curr_orient + rotation_disp;
                     simTree.updateParticle(idx, lowerBound, upperBound);
+                    failedMoves[idx] = 0;
                 }
                 else{
                     disp_x = disp_0 * sq2 * cos(curr_orient + M_PI_4) - disp_t * sq2 * sin(curr_orient - M_PI_4);
@@ -206,14 +209,28 @@ int main(int argc, char** argv){
                         squareList[idx] = tempSquare;
                         orientations[idx] = curr_orient + rotation_disp;
                         simTree.updateParticle(idx, lowerBound, upperBound);
+                        failedMoves[idx] = 0;
+                    }
+                    else{
+                        ++failedMoves[idx];
+                        activeNoises[idx]*=scaleSize;
+                        transverseNoises[idx]*=scaleSize;
+                        rotationNoises[idx]*=scaleSize;
+                        activeVelocity[idx]*=scaleSize;
                     }                  
                 }
-
+            if(!failedMoves[idx] && (activeNoises[0] < D0)){
+                activeNoises[idx]/=scaleSize;
+                transverseNoises[idx]/=scaleSize;
+                rotationNoises[idx]/=scaleSize;
+                activeVelocity[idx]/=scaleSize;
+            }
 
             }
         }
         std::cout << "Finish Iteration " << (it+1) << endl;
         if(it % stepSave == 0){
+            std::cout << it << endl;
             for(int i = 0; i < numParticles; ++i){
                 file << positions[i][0] << ";" << positions[i][1] << ";" << orientations[i] << "\n";
             }

@@ -44,6 +44,13 @@ int main(int argc, char** argv){
     vector<Square> squareList;
     vector<unsigned int> tags;
     vector<unsigned int> idxs;
+    
+    vector<double> activeNoises(numParticles, D0);
+    vector<double> transverseNoises(numParticles, DT);
+    vector<double> rotationNoises(numParticles, DR);
+    vector<double> activeVelocity(numParticles, v0);
+    vector<int> failedMoves(numParticles, 0);
+
     for(unsigned int i = 0; i < numParticles; ++i){
         vector<double> pos(2);
         double orientation;
@@ -109,11 +116,11 @@ int main(int argc, char** argv){
             unsigned int pt_tag = tags[idx];
             double curr_orient = orientations[idx];
 
-            double mu = (pt_tag == 1) ? v0: 0;
+            double mu = (pt_tag == 1) ? activeVelocity[idx]: 0;
 
-            double rotation_disp = myGenerator.normal_rdnm(0, DR);
-            double disp_0 = myGenerator.normal_rdnm(mu, D0);
-            double disp_t = myGenerator.normal_rdnm(0, DT);
+            double rotation_disp = myGenerator.normal_rdnm(0, rotationNoises[idx]);
+            double disp_0 = myGenerator.normal_rdnm(mu, activeNoises[idx]);
+            double disp_t = myGenerator.normal_rdnm(0, transverseNoises[idx]);
 
             double disp_x = disp_0 * cos(curr_orient) - disp_t * sin(curr_orient);
             double disp_y = disp_0 * sin(curr_orient) + disp_t * cos(curr_orient);
@@ -174,8 +181,8 @@ int main(int argc, char** argv){
                     simTree.updateParticle(idx, lowerBound, upperBound);
                 }
                 else{
-                    disp_x = disp_0 * sq2 * cos(curr_orient + M_PI_4) + disp_t * sq2 * sin(curr_orient - M_PI_4);
-                    disp_y = disp_0 * sq2 * sin(curr_orient + M_PI_4) - disp_t * sq2 * cos(curr_orient - M_PI_4);
+                    disp_x = disp_0 * sq2 * cos(curr_orient + M_PI_4) - disp_t * sq2 * sin(curr_orient - M_PI_4);
+                    disp_y = disp_0 * sq2 * sin(curr_orient + M_PI_4) + disp_t * sq2 * cos(curr_orient - M_PI_4);
 
                     pos = vector<double>({positions[idx][0] + disp_x, positions[idx][1] + disp_y});
 

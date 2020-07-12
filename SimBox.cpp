@@ -104,27 +104,27 @@ int main(int argc, char** argv){
     for(int it = 0; it < nIteration; ++it){
         random_shuffle(idxs.begin(), idxs.end());
         for(unsigned int idx: idxs){
-            unsigned int pt_tag = tags[idx];
-            double curr_orient = orientations[idx];
+            unsigned int pt_tag = tags[idx];  //get particle id;
+            double curr_orient = orientations[idx];  //get current particle orientation
 
-            double mu = (pt_tag == 1) ? v0: 0;
+            double mu = (pt_tag == 1) ? v0: 0;  //assign velocity
 
-            double rotation_disp = myGenerator.normal_rdnm(0, DR);
-            double disp_0 = myGenerator.normal_rdnm(mu, D0);
-            double disp_t = myGenerator.normal_rdnm(0, DT);
+            double rotation_disp = myGenerator.normal_rdnm(0, DR);  //sample rotation velocity
+            double disp_0 = myGenerator.normal_rdnm(mu, D0);  //sample displacement along self-propelled direction
+            double disp_t = myGenerator.normal_rdnm(0, DT);   //sample transverse dispalcement 
 
-            double disp_x = disp_0 * cos(curr_orient) - disp_t * sin(curr_orient);
-            double disp_y = disp_0 * sin(curr_orient) + disp_t * cos(curr_orient);
+            double disp_x = disp_0 * cos(curr_orient) - disp_t * sin(curr_orient);  //calculate dispalcement along x-axis;
+            double disp_y = disp_0 * sin(curr_orient) + disp_t * cos(curr_orient);  //calculate displacement along y-axis;
 
-            vector<double> pos({positions[idx][0] + disp_x, positions[idx][1] + disp_y});
+            vector<double> pos({positions[idx][0] + disp_x, positions[idx][1] + disp_y});  //calculate new particle position;
 
-            periodBoundary(pos, period, boxSize);
+            periodBoundary(pos, period, boxSize);  //adapt period boundary condition to the new particle position;
 
-            Square tempSquare(pos, curr_orient + rotation_disp);
-            vector<double> lowerBound({pos[0] - diagRadius, pos[1] - diagRadius});
-            vector<double> upperBound({pos[0] + diagRadius, pos[1] + diagRadius});
+            Square tempSquare(pos, curr_orient + rotation_disp);   //create new square type;
+            vector<double> lowerBound({pos[0] - diagRadius, pos[1] - diagRadius});  // lower bound of the AABB box;
+            vector<double> upperBound({pos[0] + diagRadius, pos[1] + diagRadius});  // upper bound of the AABB box;
             
-            aabb::AABB boundBox(lowerBound, upperBound);
+            aabb::AABB boundBox(lowerBound, upperBound);  //create AABB box;
 
             vector<unsigned int> particles = simTree.query(boundBox);
 
@@ -145,6 +145,7 @@ int main(int argc, char** argv){
                 simTree.updateParticle(idx, lowerBound, upperBound);
             }
             else{
+                continue;
                 disp_x = disp_0 * sq2 * cos(curr_orient - M_PI_4) - disp_t * sq2 * sin(curr_orient + M_PI_4);
                 disp_y = disp_0 * sq2 * sin(curr_orient - M_PI_4) + disp_t * sq2 * cos(curr_orient + M_PI_4);
 

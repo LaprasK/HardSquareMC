@@ -20,10 +20,35 @@ struct Point{
     double y;
 };
 
+class Btest{
+public:
+    Btest(): b1(0){};
+    Btest(int input):b1(input){};
+private:
+    int b1;
+};
+
+class Atest{
+public:
+    Atest(int a2){
+        a1 = 3;
+        int m = a1+a2;
+        btest = Btest(m);
+    }
+    Btest btest;
+private:
+    int a1;
+    
+};
+
 int main(){
-    vec2<double> a(3,4);
-    vec2<double> b(3,4);
-    cout << dot(a,b) << endl;
+    for(int i = 0; i < 100; ++i){
+        Atest a1(3);
+        if(true){
+            Atest a1(2);
+            xxxx
+        }
+    }
     
     /*
     double sidelength = sqrt(10/0.25);

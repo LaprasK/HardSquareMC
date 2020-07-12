@@ -1,3 +1,6 @@
 *.txt
 *.out
 .vscode/
+test.cpp
+*.tmp
+*conflict*

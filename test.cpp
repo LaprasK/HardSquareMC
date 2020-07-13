@@ -42,14 +42,9 @@ private:
 };
 
 int main(){
-    for(int i = 0; i < 100; ++i){
-        Atest a1(3);
-        if(true){
-            Atest a1(2);
-            xxxx
-        }
-    }
-    
+    string s = "abc";
+    for (char c: s)
+        cout << s.find("a") << endl;
     /*
     double sidelength = sqrt(10/0.25);
     Square sq1(vector<double>({0.40571, 0.892707}), 1.86641);

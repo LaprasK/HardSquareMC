@@ -15,7 +15,7 @@ int main(int argc, char** argv){
     const unsigned int numParticles = (argc > 1) ? stoi(argv[1]) : 100;
     const unsigned int activeParticles = numParticles;
     const double density = (argc > 2)? stod(argv[2]) : 0.25;
-    const unsigned int stepSave = (argc > 4) ? stod(argv[4]) : 1;
+    const unsigned int stepSave = (argc > 4) ? stod(argv[4]) : (nIteration/200);
     const double maxDisp = 0.1;
     const double sq2 = sqrt(0.5);
     const double PI2 = M_PI * 2;
@@ -32,7 +32,10 @@ int main(int argc, char** argv){
     unsigned int activeCount = 0;
     Rand myGenerator;
 
-    ofstream file("./Result.txt");
+    double perLen = 2*v0/(DR*DR);
+    cout << perLen << endl;
+    string filename = "./Result/Result_" + to_string(perLen) + "_" + to_string(density) + ".txt";
+    ofstream file(filename);
     file << numParticles <<";" << boxSize[0] << ";" << boxSize[1] << '\n';
 
     /***********************************************************/
@@ -145,7 +148,6 @@ int main(int argc, char** argv){
                 simTree.updateParticle(idx, lowerBound, upperBound);
             }
             else{
-                continue;
                 disp_x = disp_0 * sq2 * cos(curr_orient - M_PI_4) - disp_t * sq2 * sin(curr_orient + M_PI_4);
                 disp_y = disp_0 * sq2 * sin(curr_orient - M_PI_4) + disp_t * sq2 * cos(curr_orient + M_PI_4);
 
@@ -173,8 +175,8 @@ int main(int argc, char** argv){
                     simTree.updateParticle(idx, lowerBound, upperBound);
                 }
                 else{
-                    disp_x = disp_0 * sq2 * cos(curr_orient + M_PI_4) + disp_t * sq2 * sin(curr_orient - M_PI_4);
-                    disp_y = disp_0 * sq2 * sin(curr_orient + M_PI_4) - disp_t * sq2 * cos(curr_orient - M_PI_4);
+                    disp_x = disp_0 * sq2 * cos(curr_orient + M_PI_4) - disp_t * sq2 * sin(curr_orient - M_PI_4);
+                    disp_y = disp_0 * sq2 * sin(curr_orient + M_PI_4) + disp_t * sq2 * cos(curr_orient - M_PI_4);
 
                     pos = vector<double>({positions[idx][0] + disp_x, positions[idx][1] + disp_y});
 
@@ -204,7 +206,8 @@ int main(int argc, char** argv){
 
             }
         }
-        std::cout << "Finish Iteration " << (it+1) << endl;
+        if((it+1) % 100 == 0)
+            std::cout << "Finish Iteration " << (it+1) << endl;
         if(it % stepSave == 0){
             for(int i = 0; i < numParticles; ++i){
                 file << positions[i][0] << ";" << positions[i][1] << ";" << orientations[i] << "\n";

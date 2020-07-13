@@ -4,6 +4,8 @@
 #include "myrandom.h"
 #include <random>
 #include <fstream>
+#include <sstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -31,10 +33,21 @@ int main(int argc, char** argv){
     unsigned int success_move = 0;
     unsigned int activeCount = 0;
     Rand myGenerator;
+    bool loadPrevious = false;
+    stringstream stream;
 
     double perLen = 2*v0/(DR*DR);
     cout << perLen << endl;
-    string filename = "./Result/Result_" + to_string(perLen) + "_" + to_string(density) + ".txt";
+
+
+    stream << std::fixed << std::setprecision(2) << perLen;
+    string s = stream.str();
+    stream.str(string());
+    stream << std::fixed << std::setprecision(2) << density;
+    string ds = stream.str();
+
+
+    string filename = "./Result/Result_" + s + "_" + ds + ".txt";
     ofstream file(filename);
     file << numParticles <<";" << boxSize[0] << ";" << boxSize[1] << '\n';
 

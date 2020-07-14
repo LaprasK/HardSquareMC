@@ -42,9 +42,11 @@ private:
 };
 
 int main(){
-    string s = "abc";
-    for (char c: s)
-        cout << s.find("a") << endl;
+    int a = 3;
+    goto load;
+    ++a;
+    load:
+    cout << a << endl; 
     /*
     double sidelength = sqrt(10/0.25);
     Square sq1(vector<double>({0.40571, 0.892707}), 1.86641);

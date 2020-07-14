@@ -60,6 +60,9 @@ int main(int argc, char** argv){
     vector<Square> squareList;
     vector<unsigned int> tags;
     vector<unsigned int> idxs;
+
+    if(loadPrevious) goto loadData;
+    
     for(unsigned int i = 0; i < numParticles; ++i){
         vector<double> pos(2);
         double orientation;
@@ -108,6 +111,12 @@ int main(int argc, char** argv){
         ++activeCount; 
         idxs.push_back(i);
     }
+
+
+    loadData:
+    
+
+
     //write position and file to file;
     for(int i = 0; i < positions.size(); ++i){
         file << positions[i][0] << ";" << positions[i][1] << ";" << orientations[i] << "\n";

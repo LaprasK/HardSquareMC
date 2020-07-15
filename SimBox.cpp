@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <cxxopts.hpp>
 
 using namespace std;
 
@@ -13,19 +14,43 @@ using namespace std;
 inline void periodBoundary(vector<double>& , vector<bool>& , vector<double>& );
 
 int main(int argc, char** argv){
-    const unsigned int nIteration = (argc > 3)? stoi(argv[3]) : 200;
-    const unsigned int numParticles = (argc > 1) ? stoi(argv[1]) : 100;
-    const unsigned int activeParticles = numParticles;
-    const double density = (argc > 2)? stod(argv[2]) : 0.25;
-    const unsigned int stepSave = (argc > 4) ? stod(argv[4]) : (nIteration/200);
+
+    cxxopts::Options options("Square Sim", "Simulation of Active Squares in 2D System");
+
+    options.add_options()
+        ("n, nIteration", "number of iteration", cxxopts::value<int>()->default_value("10000"))
+        ("p, nParticle", "number of total particles", cxxopts::value<int>()->default_value("1000"))
+        ("r, activeRatio", "ratio of active particles", cxxopts::value<double>()->default_value("1"))
+        ("d, density", "density of system", cxxopts::value<double>()->default_value("0.4"))
+        ("t, totalConfiguration", "total configuration to save", cxxopts::value<int>()->default_value("200"))
+        ("d0", "diffusion along active direction", cxxopts::value<double>()->default_value("0.00424"))
+        ("dt", "transverse diffusion constant", cxxopts::value<double>()->default_value("0.005"))
+        ("dr", "rotation diffusion noise", cxxopts::value<double>()->default_value("0.0283"))
+        ("v0", "self propelled velocity", cxxopts::value<double>()->default_value("0.063"))
+        ("c, continue", "continue previous simulation",  cxxopts::value<bool>()->default_value("false"))
+        ("l, loadPath", "load previous result path", cxxopts::value<string>())
+    ;
+
+    auto parseResult = options.parse(argc, argv);
+
+    //const unsigned int nIteration = (argc > 3)? stoi(argv[3]) : 200;
+    const unsigned int nIteration = parseResult["nIteration"].as<int>();
+    unsigned int numParticles = parseResult["nParticle"].as<int>();
+    double ratio = parseResult["activeRatio"].as<double>();
+    const unsigned int activeParticles = numParticles*ratio;
+    const double density = parseResult["density"].as<double>();
+    const unsigned int stepSave = nIteration/parseResult["totalConfiguration"].as<int>();
     const double maxDisp = 0.1;
     const double sq2 = sqrt(0.5);
     const double PI2 = M_PI * 2;
     const double diagRadius = sqrt(0.5);
-    double D0 = 0.092122;
-    double DR = 0.238;
-    double DT = 0.1;
-    double v0 = 0.063;
+    double real_D0 =  parseResult["d0"].as<double>();
+    double D0 = sqrt(2 * real_D0);
+    double real_DR = parseResult["dr"].as<double>();
+    double DR = sqrt(2 * real_DR);
+    double real_DT = parseResult["dt"].as<double>();
+    double DT = sqrt(2 * real_DT);
+    double v0 = parseResult["v0"].as<double>();
     double sidelength = sqrt(numParticles / density);
     vector<double> boxSize({sidelength, sidelength});
     vec2<double> box(sidelength, sidelength);
@@ -33,23 +58,56 @@ int main(int argc, char** argv){
     unsigned int success_move = 0;
     unsigned int activeCount = 0;
     Rand myGenerator;
-    bool loadPrevious = false;
+    bool loadPrevious = parseResult["continue"].as<bool>();
+    string loadPath = (loadPrevious) ? parseResult["loadPath"].as<string>() : "";
+
+    /***********************************************************/
+    /*                 Change Name of File                     */
+    /***********************************************************/    
+    
     stringstream stream;
 
     double perLen = 2*v0/(DR*DR);
     cout << perLen << endl;
 
+    string filename = "./Result/Result_";
 
-    stream << std::fixed << std::setprecision(2) << perLen;
-    string s = stream.str();
-    stream.str(string());
-    stream << std::fixed << std::setprecision(2) << density;
-    string ds = stream.str();
+    vector<double> names({perLen, density, v0, real_DR, real_DT});
+    for(vector<double>::iterator it = names.begin(); it != names.end(); ++it){
+        stream.str(string());
+        stream << std::fixed << std::setprecision(3) << *it;
+        string s = stream.str();
+        filename += (s + "_");
+    }
+    filename += (to_string(nIteration) + ".txt");
 
 
-    string filename = "./Result/Result_" + s + "_" + ds + ".txt";
-    ofstream file(filename);
-    file << numParticles <<";" << boxSize[0] << ";" << boxSize[1] << '\n';
+    /***********************************************************/
+    /*                     Save Base Info                      */
+    /***********************************************************/   
+
+    fstream file;
+    if(!loadPrevious){
+        file.open(filename, fstream::out);
+        file << numParticles <<";" << boxSize[0] << ";" << boxSize[1] << '\n';
+    }
+    else{
+        cout << loadPath << endl;
+        file.open(loadPath, fstream::in | fstream::app);
+        string line;
+        getline(file, line);
+        std::istringstream sline(line);
+        std::string tempstring;
+        std::getline(sline, tempstring, ';');
+        numParticles = stoi(tempstring);
+        std::getline(sline, tempstring, ';');
+        sidelength = stod(tempstring);
+        boxSize = vector<double>({sidelength, sidelength});        
+    }
+
+        
+
+
 
     /***********************************************************/
     /*                  Initialize System                      */
@@ -61,66 +119,99 @@ int main(int argc, char** argv){
     vector<unsigned int> tags;
     vector<unsigned int> idxs;
 
-    if(loadPrevious) goto loadData;
-    
-    for(unsigned int i = 0; i < numParticles; ++i){
-        vector<double> pos(2);
-        double orientation;
-        Square tempSquare;
-        if(i == 0){
-            pos[0] = myGenerator.rdnm()*boxSize[0];
-            pos[1] = myGenerator.rdnm()*boxSize[1];
-
-            orientation = myGenerator.rdnm() * PI2;
-
-            tempSquare = Square(pos, orientation);
-        }
-        else{
-            bool overlap = true;
-
-            while(overlap){
+    if(!loadPrevious){
+        for(unsigned int i = 0; i < numParticles; ++i){
+            vector<double> pos(2);
+            double orientation;
+            Square tempSquare;
+            if(i == 0){
                 pos[0] = myGenerator.rdnm()*boxSize[0];
                 pos[1] = myGenerator.rdnm()*boxSize[1];
 
-                orientation = myGenerator.rdnm()*PI2;
+                orientation = myGenerator.rdnm() * PI2;
 
                 tempSquare = Square(pos, orientation);
+            }
+            else{
+                bool overlap = true;
 
-                vector<double> lowerBound({pos[0] - diagRadius, pos[1] - diagRadius});
-                vector<double> upperBound({pos[0] + diagRadius, pos[1] + diagRadius});
+                while(overlap){
+                    pos[0] = myGenerator.rdnm()*boxSize[0];
+                    pos[1] = myGenerator.rdnm()*boxSize[1];
 
-                aabb::AABB singleAABB(lowerBound, upperBound);
+                    orientation = myGenerator.rdnm()*PI2;
 
-                vector<unsigned int> particles = simTree.query(singleAABB);
+                    tempSquare = Square(pos, orientation);
 
-                overlap = false;
-                for(unsigned int j = 0; j < particles.size(); ++j){
-                    if(test_polygon_overlap(squareList[particles[j]], tempSquare, box)){
-                        overlap = true;
-                        break;
+                    vector<double> lowerBound({pos[0] - diagRadius, pos[1] - diagRadius});
+                    vector<double> upperBound({pos[0] + diagRadius, pos[1] + diagRadius});
+
+                    aabb::AABB singleAABB(lowerBound, upperBound);
+
+                    vector<unsigned int> particles = simTree.query(singleAABB);
+
+                    overlap = false;
+                    for(unsigned int j = 0; j < particles.size(); ++j){
+                        if(test_polygon_overlap(squareList[particles[j]], tempSquare, box)){
+                            overlap = true;
+                            break;
+                        }
                     }
                 }
             }
+            simTree.insertParticle(i, pos, diagRadius);
+            orientations.push_back(orientation);
+            positions.push_back(pos);
+            squareList.push_back(tempSquare);
+            unsigned int tag = activeCount < activeParticles ? 1 : 0;
+            tags.push_back(tag);
+            ++activeCount; 
+            idxs.push_back(i);
         }
-        simTree.insertParticle(i, pos, diagRadius);
-        orientations.push_back(orientation);
-        positions.push_back(pos);
-        squareList.push_back(tempSquare);
-        unsigned int tag = activeCount < activeParticles ? 1 : 0;
-        tags.push_back(tag);
-        ++activeCount; 
-        idxs.push_back(i);
+        //write position and file to file;
+        for(int i = 0; i < positions.size(); ++i){
+            file << positions[i][0] << ";" << positions[i][1] << ";" << orientations[i] << "\n";
+        }
+    }
+    else{
+        //start loading previous;
+        int totalCount = numParticles * 199;
+        int tempCount = 0;
+        string line;
+        while(tempCount < totalCount){
+            getline(file, line);
+            ++tempCount;
+        }
+        tempCount = 0;
+        while(tempCount < numParticles){
+            getline(file, line);
+            std::istringstream sline(line);
+            int col = 0;
+            double previous;
+            while(sline){
+                std::string tempstring;
+                if(!std::getline(sline, tempstring, ';')) break;
+                double number = std::stod(tempstring);
+                if(col == 1){
+                    positions.push_back(vector<double>({previous, number}));
+                    simTree.insertParticle(tempCount, positions.back(), diagRadius);
+                }
+                else if(col == 2){
+                    orientations.push_back(number);
+                    idxs.push_back(tempCount);
+                    if(tempCount < activeParticles) tags.push_back(1);
+                    else tags.push_back(0);
+                    squareList.push_back(Square(positions.back(), number));
+                }
+                previous = number;
+                ++col;
+            }
+            ++tempCount;
+        }        
     }
 
 
-    loadData:
-    
 
-
-    //write position and file to file;
-    for(int i = 0; i < positions.size(); ++i){
-        file << positions[i][0] << ";" << positions[i][1] << ";" << orientations[i] << "\n";
-    }
 
     /***********************************************************/
     /*                  Starting Dynamics                      */

@@ -118,6 +118,7 @@ int main(int argc, char** argv){
     vector<Square> squareList;
     vector<unsigned int> tags;
     vector<unsigned int> idxs;
+    vector<int> failRecord;
 
     if(!loadPrevious){
         for(unsigned int i = 0; i < numParticles; ++i){
@@ -219,6 +220,7 @@ int main(int argc, char** argv){
     
     for(int it = 0; it < nIteration; ++it){
         random_shuffle(idxs.begin(), idxs.end());
+        int failed_moves = 0;
         for(unsigned int idx: idxs){
             unsigned int pt_tag = tags[idx];  //get particle id;
             double curr_orient = orientations[idx];  //get current particle orientation
@@ -313,12 +315,18 @@ int main(int argc, char** argv){
                         squareList[idx] = tempSquare;
                         orientations[idx] = curr_orient + rotation_disp;
                         simTree.updateParticle(idx, lowerBound, upperBound);
-                    }                  
+                    }
+                    else{
+                        ++failed_moves;
+                    }           
                 }
 
 
             }
         }
+
+        failRecord.push_back(failed_moves);
+
         if((it+1) % 100 == 0)
             std::cout << "Finish Iteration " << (it+1) << endl;
         if(it % stepSave == 0){

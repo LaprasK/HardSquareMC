@@ -57,13 +57,15 @@ int main(int argc, char** argv){
         std::cout << orientations[0][i] << std::endl;
     }*/
     //std::cout<<dot(vec2<double>(positions[0][1] - positions[0][0]) ,vec2<double>(cos(orientations[0][0]), sin(orientations[0][0]))) << std::endl;
-    std::ofstream output("./orCorr.txt");
+    std::string orOutput = filename.substr(0, filename.size()-4) + "_orCorr.txt";
+    std::ofstream output(orOutput);
     std::vector<double> orCorr = orient_corr(orientations);
     for(auto cor: orCorr){
         output<< cor << "\n";
     }
     output.close();
-    std::ofstream outfile("./porOrCorr.txt");
+    std::string porOutput = filename.substr(0, filename.size()-4) + "_porOrCorr.txt";
+    std::ofstream outfile(porOutput);
     std::vector<double> posOrCorr = pos_orient_corr(positions, orientations, boxSize);
     for(auto cor:posOrCorr){
         outfile << cor << "\n";
@@ -135,7 +137,7 @@ std::vector<double> pos_orient_corr(const std::vector<std::vector<vec2<double> >
     for(int deltaT = 0; deltaT < res.size(); ++deltaT){
         res[deltaT] /= norm;
     }
-    std::cout << cross_boundary << std::endl;
+    //std::cout << cross_boundary << std::endl;
     return res;
 }
 

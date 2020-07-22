@@ -34,7 +34,7 @@ int main(int argc, char** argv){
     auto parseResult = options.parse(argc, argv);
 
     //const unsigned int nIteration = (argc > 3)? stoi(argv[3]) : 200;
-    const unsigned int nIteration = parseResult["nIteration"].as<int>();
+    unsigned int nIteration = parseResult["nIteration"].as<int>();
     unsigned int numParticles = parseResult["nParticle"].as<int>();
     double ratio = parseResult["activeRatio"].as<double>();
     const unsigned int activeParticles = numParticles*ratio;
@@ -89,11 +89,12 @@ int main(int argc, char** argv){
     fstream file;
     if(!loadPrevious){
         file.open(filename, fstream::out);
-        file << numParticles <<";" << boxSize[0] << ";" << boxSize[1] << '\n';
+        file << numParticles <<";" << boxSize[0] << ";" << nIteration << '\n';
     }
     else{
         cout << loadPath << endl;
-        file.open(loadPath, fstream::in | fstream::app);
+        filename = loadPath;
+        file.open(filename, fstream::in | fstream::app);
         string line;
         getline(file, line);
         std::istringstream sline(line);
@@ -102,12 +103,11 @@ int main(int argc, char** argv){
         numParticles = stoi(tempstring);
         std::getline(sline, tempstring, ';');
         sidelength = stod(tempstring);
+        std::getline(sline, tempstring, ';');
+        nIteration = stoi(tempstring);
+        //cout << nIteration << endl;
         boxSize = vector<double>({sidelength, sidelength});        
     }
-
-        
-
-
 
     /***********************************************************/
     /*                  Initialize System                      */
@@ -176,7 +176,7 @@ int main(int argc, char** argv){
     }
     else{
         //start loading previous;
-        int totalCount = numParticles * 199;
+        int totalCount = numParticles * (nIteration - 1);
         int tempCount = 0;
         string line;
         while(tempCount < totalCount){
@@ -211,8 +211,7 @@ int main(int argc, char** argv){
         }        
     }
     //file.close();
-
-
+    
 
     /***********************************************************/
     /*                  Starting Dynamics                      */
@@ -330,6 +329,9 @@ int main(int argc, char** argv){
         if((it+1) % 100 == 0)
             std::cout << "Finish Iteration " << (it+1) << endl;
         if(it % stepSave == 0){
+            //cout << it << endl;
+            //cout << positions.size() << endl;
+            //cout << orientations.size() << endl;
             for(int i = 0; i < numParticles; ++i){
                 file << positions[i][0] << ";" << positions[i][1] << ";" << orientations[i] << "\n";
             }

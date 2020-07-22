@@ -79,7 +79,7 @@ int main(int argc, char** argv){
         string s = stream.str();
         filename += (s + "_");
     }
-    filename += (to_string(nIteration) + ".txt");
+    filename += (to_string(nIteration) + "_" + to_string(numParticles) +  ".txt");
 
 
     /***********************************************************/
@@ -210,7 +210,7 @@ int main(int argc, char** argv){
             ++tempCount;
         }        
     }
-
+    //file.close();
 
 
 
@@ -334,9 +334,12 @@ int main(int argc, char** argv){
                 file << positions[i][0] << ";" << positions[i][1] << ";" << orientations[i] << "\n";
             }
         }
-
     }
     file.close();
+    string failName = (filename.substr(0, filename.size()-4) + "_failedCount.txt");
+    ofstream output_file(failName);
+    ostream_iterator<int> output_iterator(output_file, "\n");
+    std::copy(failRecord.begin(), failRecord.end(), output_iterator); 
 }
 
 
